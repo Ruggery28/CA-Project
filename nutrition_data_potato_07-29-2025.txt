@@ -1,0 +1,11 @@
+--- Nutritional Information ---
+
+Food: Potato (1 potato medium)
+  Calories: 160.89 kcal
+  Protein: 4.33 g
+  Total Fat: 0.22 g
+  Total Carbohydrates: 36.59 g
+  Dietary Fiber: 3.81 g
+  Sugars: 2.04 g
+  Sodium: 17.30 mg
+------------------------------

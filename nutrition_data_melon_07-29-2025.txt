@@ -1,0 +1,11 @@
+--- Nutritional Information ---
+
+Food: Melon (1 cup, balls)
+  Calories: 60.18 kcal
+  Protein: 1.49 g
+  Total Fat: 0.34 g
+  Total Carbohydrates: 14.44 g
+  Dietary Fiber: 1.59 g
+  Sugars: 13.91 g
+  Sodium: 28.32 mg
+------------------------------

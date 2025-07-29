@@ -1,0 +1,11 @@
+--- Nutritional Information ---
+
+Food: Water (1 serving 8 fl oz)
+  Calories: 0.00 kcal
+  Protein: 0.00 g
+  Total Fat: 0.00 g
+  Total Carbohydrates: 0.00 g
+  Dietary Fiber: 0.00 g
+  Sugars: 0.00 g
+  Sodium: 9.48 mg
+------------------------------

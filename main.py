@@ -1,16 +1,22 @@
 # main.py
 import datetime
 import os
-import requests # New import for making web requests
-import json     # New import for working with JSON data
+import requests # Import for making web requests
+import json     # Import for working with JSON data
+import smtplib  # For connection with email servers (SMTP)
+from email.mime.text import MIMEText    # For creating plain text parts of an email
+from email.mime.multipart import MIMEMultipart  # For emails with multiple parts (like text + attachment) 
+from email.mime.base import MIMEBase    # For handling generic file attachments
+from email import encoders  # For encoding attachments for email sending
 
-# Import your API keys from config.py
+# Import your API keys and email details from config.py
 # This will cause an error if config.py is missing or keys are not defined.
 try:
-    from config import NUTRITIONIX_APP_ID, NUTRITIONIX_API_KEY
+    from config import NUTRITIONIX_APP_ID, NUTRITIONIX_API_KEY, GMAIL_APP_PASSWORD, SENDER_EMAIL, RECEIVER_EMAIL
 except ImportError:
-    print("Error: config.py not found or missing NUTRITIONIX_APP_ID/API_KEY.")
-    print("Please create a config.py file with these variables.")
+    print("Error: config.py not found or missing API keys/email details.")
+    # Clarify the error message to include the new email config variables
+    print("Please create/update config.py with NUTRITIONIX_APP_ID, NUTRITIONIX_API_KEY, GMAIL_APP_PASSWORD, SENDER_EMAIL, RECEIVER_EMAIL.")
     exit() # Exit the program if configuration is missing
 
 def get_user_food_input():
@@ -119,12 +125,60 @@ def save_to_file(data, food_item, filename_prefix="nutrition_data"):
         print(f"  > Error saving file '{filename}': {e}")
         return None
 
+def send_email(subject, body, to_email, attachment_path=None):
+    """
+    this method will send an email with an optional file using Gmail SMTP.
+    Return True if successfully, False othewise.
+    """
+    #Create the email message container
+    msg = MIMEMultipart() # MIMEMultipart allows you to combine text and attachments
+    msg['From'] = SENDER_EMAIL # Set the sender email from config.py
+    msg['To'] = to_email # Set the recipient email
+    msg['Subject'] = subject # Set the email subject
+
+    # Attach the email body (plain text)
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Handle file attachment if provided
+    if attachment_path:
+        try:
+            with open(attachment_path, "rb") as attachment: # Open the file in binary read mode ('rb')
+                # Create a MIMEBase object for the attachment
+                part = MIMEBase("application", "octet-stream") # Generic binary data
+                part.set_payload(attachment.read()) # Read the file content into the payload
+            encoders.encode_base64(part) # Encode the payload for email transmission (important!)
+            part.add_header( # Add headers for the attachment
+                "Content-Disposition",
+                f"attachment; filename= {os.path.basename(attachment_path)}", # Set the filename for the attachment
+            )
+            msg.attach(part) # Attach the file part to the message
+        except Exception as e:
+            print(f"  > Could not attach file '{attachment_path}': {e}")
+            # The email body will still try to send even if attachment fails.
+
+    # Send the email via SMTP
+    try:
+        print(f"  > Attempting to send email to {to_email}...")
+        # Connect to Gmail's SMTP server securely using SSL on port 465
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(SENDER_EMAIL, GMAIL_APP_PASSWORD) # Log in using your email and App Password
+            smtp.send_message(msg) # Send the entire message object
+        print(f"  > Email sent successfully to {to_email}!")
+        return True # Indicate success
+    except smtplib.SMTPAuthenticationError:
+        print("  > Email authentication failed. Check your SENDER_EMAIL and GMAIL_APP_PASSWORD in config.py.")
+        print("  > Make sure you are using an App Password for Gmail, not your regular password.")
+        return False # Indicate authentication failure
+    except Exception as e:
+        print(f"  > Error sending email: {e}")
+        return False # Indicate other sending errors        
+
 def main():
     """
     Main function to run the Nutrition Tracker program.
-    Now includes API call and saving formatted data.
+    Now includes API call and saving formatted data, and sending email.
     """
-    print("\nNutrition Tracker")
+    print("\n=== Nutrition Tracker ===")
 
     food_item = get_user_food_input()
 
@@ -136,17 +190,29 @@ def main():
             print("\n" + formatted_data) # Print formatted data to console for immediate feedback
 
             # Save the formatted data to a file
-            saved_file_path = save_to_file(formatted_data, food_item)
+            # We store the returned path to use for email attachment
+            original_file_path = save_to_file(formatted_data, food_item)
 
-            if saved_file_path:
-                print(f"Success! Data for '{food_item}' fetched and saved.")
+            if original_file_path: # Only attempt to send email if file was saved successfully
+                # Preparing email subject and body
+                email_subject = f"Nutrition Report for: {food_item} ({datetime.datetime.now().strftime('%m-%d-%Y')})"
+                email_body = f"Hello, \n\nHere is the report of nutritional information for: {food_item} that you requested via Nutrition Tracker program.\n\n{formatted_data}\n\nBest Regards,\nYour Nutrition Tracker."
+                
+                print("  > Preparing to send email...")
+                # Call the new send_email function, passing the file path as an attachment
+                email_sent_successfully = send_email(email_subject, email_body, RECEIVER_EMAIL, original_file_path)
+
+                if email_sent_successfully:
+                    print("  > Email operation completed.")
+                else:
+                    print("  > Email sending failed. Please check the error messages above.")
+                
             else:
-                print(f"Failed to save formatted data for '{food_item}'.")
+                print("  > File was not saved, so email could not be sent.")
         else:
-            print(f"Could not retrieve nutritional information for '{food_item}'. Please try again.")
+            print(f"Could not retrieve nutritional information for '{food_item}'. Operation aborted.")
     else:
         print("No food item entered. The program will now exit.")
-
 
 if __name__ == "__main__":
     main()
