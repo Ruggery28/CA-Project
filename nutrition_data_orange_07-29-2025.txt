@@ -1,0 +1,11 @@
+--- Nutritional Information ---
+
+Food: Orange (1 fruit (2-7/8" dia))
+  Calories: 68.60 kcal
+  Protein: 1.27 g
+  Total Fat: 0.21 g
+  Total Carbohydrates: 17.56 g
+  Dietary Fiber: 3.08 g
+  Sugars: 11.90 g
+  Sodium: 1.40 mg
+------------------------------
