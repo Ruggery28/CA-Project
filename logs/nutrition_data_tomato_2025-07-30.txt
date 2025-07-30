@@ -1,0 +1,11 @@
+--- Nutritional Information ---
+
+Food: Tomato (1 medium whole (2-3/5" dia))
+  Calories: 22.14 kcal
+  Protein: 1.08 g
+  Total Fat: 0.25 g
+  Total Carbohydrates: 4.78 g
+  Dietary Fiber: 1.48 g
+  Sugars: 3.23 g
+  Sodium: 6.15 mg
+------------------------------

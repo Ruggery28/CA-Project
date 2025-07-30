@@ -109,10 +109,10 @@ def format_nutritional_data(raw_data):
 def save_to_file(data, food_item, filename_prefix="nutrition_data"):
     """
     Saves the provided data to a .txt file.
-    The filename includes the food item (sanitized) and the current date (MM-DD-YYYY).
+    The filename includes the food item (sanitized) and the current date (YYYY-MM-DD).
     Returns the full path to the created file, or None if an error occurs.
     """
-    current_date = datetime.datetime.now().strftime("%m-%d-%Y")
+    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
     # Sanitize food_item for filename to avoid invalid characters
     sanitized_food_item = "".join(c for c in food_item if c.isalnum() or c in (' ', '_')).replace(' ', '_')
     filename = f"{filename_prefix}_{sanitized_food_item}_{current_date}.txt"
@@ -176,39 +176,66 @@ def send_email(subject, body, to_email, attachment_path=None):
 def main():
     """
     Main function to run the Nutrition Tracker program.
-    Now includes API call and saving formatted data, and sending email.
+    Now includes API call, saving formatted data, sending email,
+    and moving/renaming saved files to a 'logs' folder.
     """
-    print("\n=== Nutrition Tracker ===")
+    print("\n--- Nutrition Tracker  ---") # Updated welcome message
 
     food_item = get_user_food_input()
 
     if food_item:
-        nutritional_data_raw = get_nutritional_info(food_item) # CALLING THE API FUNCTION HERE
+        nutritional_data_raw = get_nutritional_info(food_item)
 
         if nutritional_data_raw:
-            formatted_data = format_nutritional_data(nutritional_data_raw) # FORMATTING THE DATA HERE
+            formatted_data = format_nutritional_data(nutritional_data_raw)
             print("\n" + formatted_data) # Print formatted data to console for immediate feedback
 
             # Save the formatted data to a file
-            # We store the returned path to use for email attachment
+            # Get the path of the saved file, which now uses YYYY-MM-DD
             original_file_path = save_to_file(formatted_data, food_item)
 
-            if original_file_path: # Only attempt to send email if file was saved successfully
-                # Preparing email subject and body
-                email_subject = f"Nutrition Report for: {food_item} ({datetime.datetime.now().strftime('%m-%d-%Y')})"
-                email_body = f"Hello, \n\nHere is the report of nutritional information for: {food_item} that you requested via Nutrition Tracker program.\n\n{formatted_data}\n\nBest Regards,\nYour Nutrition Tracker."
-                
+            if original_file_path: # Only proceed if file was saved successfully
+                print(f"  > Processing saved file for item:  '{food_item}'...")
+
+                # 1. Define the 'logs' directory path
+                logs_dir = "logs"
+                # 2. Create the 'logs' directory if it doesn't exist
+                os.makedirs(logs_dir, exist_ok=True) # exist_ok=True means no error if folder exists
+
+                # 3. Construct the new path for the file inside the 'logs' directory
+                # os.path.basename extracts just the filename from the original_file_path
+                new_file_path = os.path.join(logs_dir, os.path.basename(original_file_path))
+
+                try:
+                    # 4. Move (and implicitly rename if target is different) the file
+                    # This moves the file from its original location to the 'logs' folder
+                    os.rename(original_file_path, new_file_path)
+                    print(f"  > File moved to '{new_file_path}'")
+                    # Update original_file_path to the new location for email attachment
+                    original_file_path = new_file_path
+                except OSError as e:
+                    print(f"  > Error moving file to logs folder: {e}")
+                    # If moving fails, you might decide to stop here or just report the error.
+                    # For this assignment, we'll continue with email if the file still exists at the original path.
+                    print("  > Attempting to send email using the file's original location (if it still exists).")
+
+                # --- END NEW FILE MANAGEMENT CODE ---
+
+                # Prepare email subject and body
+                # Ensure the email subject also uses YYYY-MM-DD for consistency
+                email_subject = f"Nutrition Report for: {food_item} ({datetime.datetime.now().strftime('%Y-%m-%d')})"
+                email_body = f"Hello,\n\nHere is the detailed nutritional information for '{food_item}' that you requested via the Nutrition Tracker program.\n\n{formatted_data}\n\nBest regards,\nYour Nutrition Tracker"
+
                 print("  > Preparing to send email...")
-                # Call the new send_email function, passing the file path as an attachment
+                # Call the send_email function, passing the (potentially updated) file path as an attachment
                 email_sent_successfully = send_email(email_subject, email_body, RECEIVER_EMAIL, original_file_path)
 
                 if email_sent_successfully:
                     print("  > Email operation completed.")
                 else:
                     print("  > Email sending failed. Please check the error messages above.")
-                
             else:
-                print("  > File was not saved, so email could not be sent.")
+                print("  > File was not saved, so email and file moving could not be done.")
         else:
             print(f"Could not retrieve nutritional information for '{food_item}'. Operation aborted.")
     else:
