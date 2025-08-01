@@ -1,0 +1,11 @@
+--- Nutritional Information ---
+
+Food: Coconut Water (1 cup)
+  Calories: 45.60 kcal
+  Protein: 1.73 g
+  Total Fat: 0.48 g
+  Total Carbohydrates: 8.90 g
+  Dietary Fiber: 2.64 g
+  Sugars: 6.26 g
+  Sodium: 252.00 mg
+------------------------------
